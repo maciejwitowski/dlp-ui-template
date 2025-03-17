@@ -3,6 +3,7 @@ import { useAccount, useConfig, useWriteContract } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { DataRegistry } from "@/contracts/instances/data-registry";
 import { TransactionReceipt } from "viem";
+import { Controller } from "@/contracts/instances/controller";
 
 // Interface for blockchain error objects
 interface BlockchainErrorObject {
@@ -23,6 +24,10 @@ export function useAddFile() {
   const [error, setError] = useState<Error | null>(null);
   const [contractError, setContractError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<TransactionReceipt | null>(null);
+
+  const { address: dataLiquidityPoolAddress } = Controller(
+    "DataLiquidityPoolProxy"
+  );
 
   /**
    * Add file to blockchain and wait for receipt
@@ -48,7 +53,7 @@ export function useAddFile() {
           address,
           [
             {
-              account: address,
+              account: dataLiquidityPoolAddress,
               key: encryptionKey,
             },
           ],

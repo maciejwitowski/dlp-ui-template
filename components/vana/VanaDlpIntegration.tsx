@@ -26,7 +26,11 @@ import { ContributionSuccess, ContributionData } from "./ContributionSuccess";
 import { ConnectWalletButton } from "./ConnectWalletButton";
 import { useAddFile } from "./hooks/useAddFile";
 import { useDataUpload } from "./hooks/useDataUpload";
-import { useTeeProof, getDlpPublicKey } from "./hooks/useTeeProof";
+import {
+  useTeeProof,
+  getDlpPublicKey,
+  SIGN_MESSAGE,
+} from "./hooks/useTeeProof";
 import { useRewardClaim } from "./hooks/useRewardClaim";
 import { encryptWithWalletPublicKey } from "@/lib/utils";
 import { type Log, parseEventLogs, TransactionReceipt } from "viem";
@@ -38,9 +42,6 @@ type FileAddedEventArgs = {
   ownerAddress: `0x${string}`; // viem uses branded string type for addresses
   url: string;
 };
-
-// Fixed message for signing
-const SIGN_MESSAGE = "Please sign to retrieve your encryption key";
 
 /**
  * Get file ID from transaction receipt logs
@@ -126,10 +127,21 @@ export function VanaDlpIntegration() {
     try {
       setError(null);
 
+      // Sign the message to get a signature
+      let signature;
+      try {
+        signature = await signMessageAsync({ message: SIGN_MESSAGE });
+      } catch (signError) {
+        console.error("Error signing message:", signError);
+        setError("Failed to sign the message. Please try again.");
+        return;
+      }
+
       // Step 1: Upload data to Google Drive
       setCurrentStep(1);
       const uploadResult = await uploadData(
         userInfo as UserInfo,
+        signature,
         driveInfo as DriveInfo
       );
 
@@ -150,16 +162,6 @@ export function VanaDlpIntegration() {
       // Check wallet connection
       if (!isConnected) {
         setError("Wallet connection required to register on blockchain");
-        return;
-      }
-
-      // Sign the message to get a signature
-      let signature;
-      try {
-        signature = await signMessageAsync({ message: SIGN_MESSAGE });
-      } catch (signError) {
-        console.error("Error signing message:", signError);
-        setError("Failed to sign the message. Please try again.");
         return;
       }
 
@@ -209,7 +211,8 @@ export function VanaDlpIntegration() {
           // Request the proof
           const proofResult = await requestContributionProof(
             fileId,
-            encryptedKey
+            encryptedKey,
+            signature
           );
 
           // Mark third step as completed

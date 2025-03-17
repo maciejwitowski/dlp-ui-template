@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { uploadFileToDrive } from "@/lib/googleApi";
-import { formatVanaFileId, base64ToBlob } from "@/lib/utils";
 
 /**
- * This route handles the VANA DLP flow:
- * 1. Accepts encrypted user data from the client
- * 2. Uploads to Google Drive
- * 3. Returns the URL to be registered on VANA DLP
+ * This route registers VANA DLP file information if needed
+ * Most operations are now handled client-side via the Google Service
  */
 export async function POST(req: NextRequest) {
   try {
@@ -32,48 +28,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { encryptedFile, timestamp } = requestData;
+    const { fileUrl, downloadUrl, fileId, vanaFileId } = requestData;
 
-    if (!encryptedFile) {
+    if (!fileUrl || !downloadUrl || !fileId || !vanaFileId) {
       return NextResponse.json(
-        { error: "Encrypted file data is required" },
+        { error: "Missing required file information" },
         { status: 400 }
       );
     }
-
-    // Convert the base64 string back to a Blob
-    const fileBlob = base64ToBlob(encryptedFile);
-
-    // Upload encrypted file to Google Drive
-    let uploadResult;
-    try {
-      const fileName = `vana_dlp_data_${timestamp || Date.now()}.json`;
-      uploadResult = await uploadFileToDrive(
-        session.accessToken as string,
-        fileBlob,
-        fileName
-      );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? `Upload failed: ${error.message}`
-          : "Failed to upload encrypted data to Google Drive";
-
-      return NextResponse.json({ error: errorMessage }, { status: 502 });
-    }
-
-    // Create the direct download URL
-    const downloadUrl = `https://www.googleapis.com/drive/v3/files/${uploadResult.id}?alt=media`;
-
-    // Return the file information to be registered with VANA
+    
+    // Here you could perform additional VANA platform registration
+    // or server-side verification if needed
+    
     return NextResponse.json({
-      fileUrl: uploadResult.webViewLink,
-      downloadUrl: downloadUrl,
-      fileId: uploadResult.id,
-      vanaFileId: formatVanaFileId(
-        uploadResult.webViewLink,
-        timestamp || Date.now()
-      ),
+      fileUrl,
+      downloadUrl,
+      fileId,
+      vanaFileId
     });
   } catch (error) {
     const errorMessage =

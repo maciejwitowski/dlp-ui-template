@@ -9,35 +9,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Client-side encryption utilities for VANA DLP integration
- * These functions handle encrypting data before storing it to Google Drive
- */
-
-/**
- * Encrypts data using a signature as the encryption key
- * @param data The data to encrypt
- * @returns The encrypted data
- */
-export async function encryptData(data: string): Promise<string> {
-  const message = await openpgp.createMessage({ text: data });
-  const encrypted = await openpgp.encrypt({
-    message,
-    passwords: [data],
-    format: "armored",
-  });
-  return encrypted as string;
-}
-
-/**
  * Client-side encryption of file data
  * @param data The data to encrypt
  * @param signature The signature to use for encryption
  * @returns The encrypted data as a Blob
  */
-export async function clientSideEncrypt<T extends Blob | File>(
-  data: T,
+export async function clientSideEncrypt(
+  data: Blob,
   signature: string
-): Promise<T> {
+): Promise<Blob> {
   const dataBuffer = await data.arrayBuffer();
   const message = await openpgp.createMessage({
     binary: new Uint8Array(dataBuffer),
@@ -49,20 +29,15 @@ export async function clientSideEncrypt<T extends Blob | File>(
     format: "binary",
   });
 
-  // Convert WebStream<Uint8Array> to BlobPart
+  // Convert WebStream<Uint8Array> to Blob
   const response = new Response(encrypted as ReadableStream<Uint8Array>);
   const arrayBuffer = await response.arrayBuffer();
   const uint8Array = new Uint8Array(arrayBuffer);
 
-  if (data instanceof File) {
-    return new File([uint8Array], data.name, {
-      type: "application/octet-stream",
-    }) as T;
-  } else {
-    return new Blob([uint8Array], {
-      type: "application/octet-stream",
-    }) as T;
-  }
+  const encryptedBlob = new Blob([uint8Array], {
+    type: "application/octet-stream",
+  });
+  return encryptedBlob;
 }
 
 /**

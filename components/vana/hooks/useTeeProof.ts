@@ -1,9 +1,14 @@
+import { createClient } from "@/contracts/client";
+import { Controller } from "@/contracts/instances/controller";
+import { getEncryptionParameters } from "@/lib/crypto-utils";
+import { encryptWithWalletPublicKey } from "@/lib/utils";
+import { waitForTransactionReceipt } from "@wagmi/core";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { useAccount, useConfig, useWriteContract } from "wagmi";
-import { waitForTransactionReceipt } from "@wagmi/core";
-import { Controller } from "@/contracts/instances/controller";
-import { createClient } from "@/contracts/client";
-import { getEncryptionParameters } from "@/lib/crypto-utils";
+
+// Fixed message for signing
+export const SIGN_MESSAGE = "Please sign to retrieve your encryption key";
 
 type JobDetails = {
   teeUrl: string;
@@ -62,6 +67,7 @@ export const useTeeProof = () => {
   const { writeContractAsync, isPending } = useWriteContract();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { data: session } = useSession();
 
   // Create client and read contract directly
   const client = createClient();
@@ -135,7 +141,8 @@ export const useTeeProof = () => {
   // Request contribution proof from TEE
   const requestContributionProof = async (
     fileId: number,
-    encryptionKey: string
+    encryptionKey: string,
+    signature: string
   ) => {
     setIsProcessing(true);
     setError(null);
@@ -143,6 +150,10 @@ export const useTeeProof = () => {
     try {
       if (!address) {
         throw new Error("Wallet not connected");
+      }
+
+      if (!session?.accessToken) {
+        throw new Error("Authentication required");
       }
 
       // Request contribution proof using wagmi hooks
@@ -186,8 +197,11 @@ export const useTeeProof = () => {
         nonce,
         proof_url:
           "https://github.com/vana-com/dlp-proof-template/releases/download/v3/my-proof-3.tar.gz",
-        encryption_seed: encryptionKey,
-        env_vars: {}, // Empty object - token will be added by the API
+        encryption_seed: SIGN_MESSAGE,
+        env_vars: {
+          // Add the Google token directly from the session
+          GOOGLE_TOKEN: session.accessToken,
+        },
         validate_permissions: [
           {
             address: dataLiquidityPoolAddress,
@@ -201,22 +215,29 @@ export const useTeeProof = () => {
       // If TEE public key is available, add encrypted encryption key
       if (jobDetails.teePublicKey) {
         // In production, encrypt the key with the TEE public key
-        requestBody.encrypted_encryption_key = encryptionKey; // Simplified for now
+
+        // const encryptedKey = await encryptWithWalletPublicKey(
+        //   signature,
+        //   jobDetails.teePublicKey
+        // );
+        requestBody.encryption_key = signature;
+        // TODO: we need to encrypt the encryptionKey
+        // requestBody.encrypted_encryption_key = encryptedKey; // Simplified for now
       } else {
-        requestBody.encryption_key = encryptionKey;
+        requestBody.encryption_key = signature;
       }
 
-      // Send request to our API proxy instead of directly to TEE
-      const contributionProofResponse = await fetch("/api/tee/proof", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          teeUrl: jobDetails.teeUrl,
-          requestBody,
-        }),
-      });
+      // Make direct request to the TEE's RunProof endpoint
+      const contributionProofResponse = await fetch(
+        `${jobDetails.teeUrl}/RunProof`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       if (!contributionProofResponse.ok) {
         const errorData = await contributionProofResponse.json();
