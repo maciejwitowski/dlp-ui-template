@@ -31,7 +31,7 @@ interface ProofRequestBody {
   proof_url: string;
   encryption_seed: string;
   env_vars: {
-    USER_EMAIL: string;
+    GOOGLE_TOKEN?: string;
   };
   validate_permissions: {
     address: string;
@@ -185,11 +185,9 @@ export const useTeeProof = () => {
         file_id: fileId,
         nonce,
         proof_url:
-          "https://github.com/vana-com/vana-satya-proof-template/releases/download/v24/gsc-my-proof-24.tar.gz",
+          "https://github.com/vana-com/dlp-proof-template/releases/download/v3/my-proof-3.tar.gz",
         encryption_seed: encryptionKey,
-        env_vars: {
-          USER_EMAIL: "user@example.com", // This should be dynamic in production
-        },
+        env_vars: {}, // Empty object - token will be added by the API
         validate_permissions: [
           {
             address: dataLiquidityPoolAddress,
@@ -208,17 +206,17 @@ export const useTeeProof = () => {
         requestBody.encryption_key = encryptionKey;
       }
 
-      // Send request to TEE
-      const contributionProofResponse = await fetch(
-        `${jobDetails.teeUrl}/RunProof`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+      // Send request to our API proxy instead of directly to TEE
+      const contributionProofResponse = await fetch("/api/tee/proof", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          teeUrl: jobDetails.teeUrl,
+          requestBody,
+        }),
+      });
 
       if (!contributionProofResponse.ok) {
         const errorData = await contributionProofResponse.json();
