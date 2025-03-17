@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vana DLP UI Template
+
+This is a generic UI for uploading data to a Data Liquidity Pool (DLP). This app enables users to contribute data to the Vana network while maintaining privacy through client-side encryption.
+
+## How It Works
+
+1. Connect your EVM compatible wallet, which holds some $VANA tokens
+2. Login to your Google Drive or Dropbox for data storage
+3. Drag and drop your data, which is encrypted client-side before being stored in your personal storage
+4. A transaction is written on-chain, which DLP validators will pick up to verify your file
+5. The Satya Network (using Trusted Execution Environment) validates your contribution
+
+## Features
+
+- Secure wallet connection with Wagmi and Para
+- Client-side encryption using OpenPGP before any data leaves your browser
+- Integration with Google Drive and Dropbox for personal storage
+- On-chain transaction writing using Vana smart contracts
+- TEE-based data validation through the Satya Network
+- Responsive UI built with modern components
+
+## Prerequisites
+
+- Node.js (version 16 or newer)
+- Yarn package manager
+- An EVM-compatible wallet with $VANA tokens
+- Google Drive or Dropbox account
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
+# First, install the dependencies
+yarn install
+
+# Copy .env.example to .env
+cp .env.example .env
+
+# Run the development server
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the app running.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Client-side encryption
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The Vana network strives to ensure personal data remains private, and is only shared with trusted parties. You can read more about how a DLP uses client-side encryption to protect user data [here](https://docs.vana.org/docs/data-privacy).
 
-## Learn More
+## Data Validation
 
-To learn more about Next.js, take a look at the following resources:
+Data submitted to the Vana network is validated using a Proof of Contribution system through the Satya Network, which consists of highly confidential nodes running on special hardware. The validation process ensures:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Your encrypted data is securely decrypted within a trusted execution environment (Intel TDX)
+2. Custom validation logic for your DLP runs against the data
+3. Attestations are generated and proofs are written on-chain
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For more details about how data validation works on Vana, see the [data validation documentation](https://docs.vana.org/docs/data-validation).
 
-## Deploy on Vercel
+## Learn more
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+You can find out more about building a data liquidity pool with Vana [here](https://docs.vana.org/docs/how-to-create-a-data-liquidity-pool).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+[MIT](LICENSE)
