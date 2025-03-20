@@ -1,23 +1,7 @@
 import { CheckCircle, ExternalLink } from "lucide-react";
 import { ContributionSteps } from "./ContributionSteps";
-import {
-  ContributionSummary,
-  UserInfo,
-  DriveInfo,
-} from "./ContributionSummary";
-
-export type ContributionData = {
-  contributionId: string;
-  encryptedUrl: string;
-  transactionReceipt: {
-    hash: string;
-    blockNumber?: number;
-  };
-  fileId?: number;
-  teeProofData?: Record<string, unknown>;
-  teeJobId?: number;
-  rewardTxHash?: string;
-};
+import { ContributionSummary } from "./ContributionSummary";
+import { ContributionData, DriveInfo, UserInfo } from "./types";
 
 type ContributionSuccessProps = {
   contributionData: ContributionData;

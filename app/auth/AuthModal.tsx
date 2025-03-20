@@ -2,7 +2,7 @@
 
 import { ParaModal as AuthModalComponent } from "@getpara/react-sdk";
 import { AuthLayout, ExternalWallet, OAuthMethod } from "@getpara/react-sdk";
-import { paraClient } from "@/lib/wallet";
+import { paraClient } from "@/lib/auth/wallet";
 import { useState, useCallback } from "react";
 
 interface AuthModalCustomProps {

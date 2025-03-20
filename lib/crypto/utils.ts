@@ -1,12 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import * as openpgp from "openpgp";
 import eccrypto from "eccrypto";
-import { getEncryptionParameters } from "./crypto-utils";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import * as openpgp from "openpgp";
 
 /**
  * Client-side encryption of file data
@@ -96,42 +89,35 @@ export function formatVanaFileId(
   )}`;
 }
 
-/**
- * Convert Blob to Base64 string for data transmission
- * @param blob The Blob to convert
- * @returns Promise resolving to a Base64 string
- */
-export const blobToBase64 = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:application/octet-stream;base64,")
-      const base64Data = base64.split(",")[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
+// Store the generated values so they remain consistent
+let generatedIV: Uint8Array | null = null;
+let generatedEphemeralKey: Uint8Array | null = null;
 
 /**
- * Convert Base64 string back to Blob
- * @param base64 The Base64 string to convert
- * @param mimeType The MIME type of the resulting Blob
- * @returns A Blob created from the Base64 string
+ * Generate or retrieve the encryption parameters (IV and ephemeral key)
+ * Ensures the same values are used across multiple calls
+ * @returns An object containing the IV and ephemeral key
  */
-export function base64ToBlob(
-  base64: string,
-  mimeType: string = "application/octet-stream"
-): Blob {
-  const byteCharacters = Buffer.from(base64, "base64").toString("binary");
-  const byteNumbers = new Array(byteCharacters.length);
+export function getEncryptionParameters() {
+  if (!generatedIV || !generatedEphemeralKey) {
+    // 16-byte initialization vector (fixed value)
+    generatedIV = new Uint8Array([
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+      0x0d, 0x0e, 0x0f, 0x10,
+    ]);
 
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
+    // 32-byte ephemeral key (fixed value)
+    generatedEphemeralKey = new Uint8Array([
+      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
+      0xdd, 0xee, 0xff, 0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80,
+      0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0x00,
+    ]);
   }
 
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
+  return {
+    iv: generatedIV,
+    ephemeralKey: generatedEphemeralKey,
+    ivHex: Buffer.from(generatedIV).toString("hex"),
+    ephemeralKeyHex: Buffer.from(generatedEphemeralKey).toString("hex"),
+  };
 }

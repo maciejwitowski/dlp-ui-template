@@ -1,15 +1,5 @@
 import { LockKeyhole } from "lucide-react";
-
-export type UserInfo = {
-  id?: string;
-  name: string;
-  email: string;
-  locale?: string;
-};
-
-export type DriveInfo = {
-  percentUsed: number;
-};
+import { DriveInfo, UserInfo } from "./types";
 
 type ContributionSummaryProps = {
   userInfo: UserInfo;
@@ -17,10 +7,10 @@ type ContributionSummaryProps = {
   isEncrypted?: boolean;
 };
 
-export function ContributionSummary({ 
-  userInfo, 
-  driveInfo, 
-  isEncrypted = false 
+export function ContributionSummary({
+  userInfo,
+  driveInfo,
+  isEncrypted = false,
 }: ContributionSummaryProps) {
   return (
     <div className="bg-gray-50 p-3 rounded-md border">
@@ -31,7 +21,9 @@ export function ContributionSummary({
         <li>• Google Profile: {userInfo.name}</li>
         <li>• Email: {userInfo.email}</li>
         {userInfo.locale && <li>• Locale: {userInfo.locale}</li>}
-        {driveInfo && <li>• Drive Storage Info: {driveInfo.percentUsed}% used</li>}
+        {driveInfo && (
+          <li>• Drive Storage Info: {driveInfo.percentUsed}% used</li>
+        )}
       </ul>
       <p className="text-xs mt-2 text-gray-500">
         <LockKeyhole className="h-3 w-3 inline mr-1" />
@@ -41,4 +33,4 @@ export function ContributionSummary({
       </p>
     </div>
   );
-} 
+}

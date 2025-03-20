@@ -1,10 +1,10 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { LoginButton } from "@/components/auth/LoginButton";
-import { UserProfile } from "@/components/profile/UserProfile";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { LoginButton } from "./auth/LoginButton";
+import { UserProfile } from "./profile/UserProfile";
 
 export default function Home() {
   const { data: session, status } = useSession();

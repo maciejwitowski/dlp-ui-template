@@ -1,3 +1,5 @@
+// ContributionSteps.tsx
+import React from "react";
 import {
   CheckCircle,
   Loader2,
@@ -8,13 +10,18 @@ import {
   XCircle,
 } from "lucide-react";
 
-// Steps in the contribution process
 export type Step = {
   id: number;
   title: string;
   description: string;
   icon: React.ReactNode;
+  // Message shown while step is in progress
+  statusMessage: string;
+  // Optional message shown when signing is in progress
+  signingMessage?: string;
 };
+
+export type StepStatus = "pending" | "current" | "complete" | "error";
 
 export const contributionSteps: Step[] = [
   {
@@ -22,38 +29,44 @@ export const contributionSteps: Step[] = [
     title: "Encrypt & Upload Data",
     description: "Encrypting and securely storing your data",
     icon: <LockKeyhole className="h-5 w-5" />,
+    statusMessage: "Uploading to Google Drive...",
+    signingMessage: "Signing message...",
   },
   {
     id: 2,
     title: "Register on Blockchain",
     description: "Recording encrypted data on the VANA network",
     icon: <BlocksIcon className="h-5 w-5" />,
+    statusMessage: "Adding to blockchain...",
   },
   {
     id: 3,
     title: "Request Validation",
     description: "Submitting job to validation nodes",
     icon: <Server className="h-5 w-5" />,
+    statusMessage: "Requesting validation from Satya node...",
   },
   {
     id: 4,
     title: "Validate Contribution",
     description: "Running proof-of-contribution in trusted environment",
     icon: <Server className="h-5 w-5" />,
+    statusMessage: "Running proof-of-contribution...",
   },
   {
     id: 5,
     title: "Receive Attestation",
     description: "Recording validation proof on-chain",
     icon: <Award className="h-5 w-5" />,
+    statusMessage: "Recording proof on-chain...",
   },
 ];
 
-type ContributionStepsProps = {
+interface ContributionStepsProps {
   currentStep: number;
   completedSteps: number[];
   hasError?: boolean;
-};
+}
 
 export function ContributionSteps({
   currentStep,
@@ -61,10 +74,24 @@ export function ContributionSteps({
   hasError = false,
 }: ContributionStepsProps) {
   // Helper function to determine the status of each step
-  const getStepStatus = (stepId: number) => {
+  const getStepStatus = (stepId: number): StepStatus => {
     if (completedSteps.includes(stepId)) return "complete";
     if (currentStep === stepId) return hasError ? "error" : "current";
     return "pending";
+  };
+
+  // Helper function to render the status icon
+  const renderStatusIcon = (status: StepStatus, stepId: number) => {
+    switch (status) {
+      case "complete":
+        return <CheckCircle className="h-4 w-4" />;
+      case "current":
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+      case "error":
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return stepId;
+    }
   };
 
   return (
@@ -82,19 +109,11 @@ export function ContributionSteps({
                     : status === "current"
                     ? "bg-blue-100 text-blue-600"
                     : status === "error"
-                    ? "bg-red-100 text-red-600" 
+                    ? "bg-red-100 text-red-600"
                     : "bg-gray-100 text-gray-500"
                 }`}
               >
-                {status === "complete" ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : status === "current" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : status === "error" ? (
-                  <XCircle className="h-4 w-4" />
-                ) : (
-                  step.id
-                )}
+                {renderStatusIcon(status, step.id)}
               </div>
               {/* Connector line (except for last item) */}
               {i < contributionSteps.length - 1 && (
@@ -110,15 +129,7 @@ export function ContributionSteps({
               {status === "current" && (
                 <p className="text-xs text-blue-600 mt-1 flex items-center">
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  {step.id === 1
-                    ? "Encrypting and uploading data..."
-                    : step.id === 2
-                    ? "Registering on blockchain..."
-                    : step.id === 3
-                    ? "Requesting validation from Satya node..."
-                    : step.id === 4
-                    ? "Running proof-of-contribution..."
-                    : "Recording proof on-chain..."}
+                  {step.statusMessage}
                 </p>
               )}
               {status === "error" && (
@@ -133,4 +144,29 @@ export function ContributionSteps({
       })}
     </div>
   );
+}
+
+// Export helper function to get step message for a given step ID and signing state
+export function getStepMessage(
+  stepId: number,
+  isSigning: boolean = false
+): string {
+  const step = contributionSteps.find((s) => s.id === stepId);
+
+  if (!step) {
+    return "Processing...";
+  }
+
+  // If currently signing and there's a signing message defined, return that
+  if (isSigning && step.signingMessage) {
+    return step.signingMessage;
+  }
+
+  // Otherwise return the standard status message
+  return step.statusMessage;
+}
+
+// For easier access, also export a function to find a step by ID
+export function getStepById(stepId: number): Step | undefined {
+  return contributionSteps.find((s) => s.id === stepId);
 }

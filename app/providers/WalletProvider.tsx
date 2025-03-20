@@ -1,7 +1,7 @@
 "use client";
 
 import { activeChain } from "@/contracts/chains";
-import { paraClient } from "@/lib/wallet";
+import { paraClient } from "@/lib/auth/wallet";
 import {
   coinbaseWallet,
   metaMaskWallet,

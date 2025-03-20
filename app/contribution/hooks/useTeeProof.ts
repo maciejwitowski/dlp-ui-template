@@ -1,7 +1,6 @@
 import { createClient } from "@/contracts/client";
 import { Controller } from "@/contracts/instances/controller";
-import { getEncryptionParameters } from "@/lib/crypto-utils";
-import { encryptWithWalletPublicKey } from "@/lib/utils";
+import { getEncryptionParameters } from "@/lib/crypto/utils";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
@@ -9,6 +8,14 @@ import { useAccount, useConfig, useWriteContract } from "wagmi";
 
 // Fixed message for signing
 export const SIGN_MESSAGE = "Please sign to retrieve your encryption key";
+
+export type ProofResult = {
+  fileId: number;
+  jobId: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  proofData: any;
+  txHash: string;
+};
 
 type JobDetails = {
   teeUrl: string;
@@ -195,8 +202,7 @@ export const useTeeProof = () => {
         job_id: latestJobId,
         file_id: fileId,
         nonce,
-        proof_url:
-          "https://github.com/vana-com/dlp-proof-template/releases/download/v3/my-proof-3.tar.gz",
+        proof_url: process.env.NEXT_PUBLIC_PROOF_URL || "",
         encryption_seed: SIGN_MESSAGE,
         env_vars: {
           // Add the Google token directly from the session
@@ -213,19 +219,12 @@ export const useTeeProof = () => {
       };
 
       // If TEE public key is available, add encrypted encryption key
-      if (jobDetails.teePublicKey) {
-        // In production, encrypt the key with the TEE public key
-
-        // const encryptedKey = await encryptWithWalletPublicKey(
-        //   signature,
-        //   jobDetails.teePublicKey
-        // );
-        requestBody.encryption_key = signature;
-        // TODO: we need to encrypt the encryptionKey
-        // requestBody.encrypted_encryption_key = encryptedKey; // Simplified for now
-      } else {
-        requestBody.encryption_key = signature;
-      }
+      // if (jobDetails.teePublicKey) {
+      //   requestBody.encrypted_encryption_key = encryptionKey;
+      // } else {
+      //   requestBody.encryption_key = signature;
+      // }
+      requestBody.encryption_key = signature;
 
       // Make direct request to the TEE's RunProof endpoint
       const contributionProofResponse = await fetch(

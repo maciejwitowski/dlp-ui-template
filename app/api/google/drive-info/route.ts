@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { getDriveInfo } from "@/lib/googleApi";
-import { authOptions } from "@/lib/auth";
+import { getDriveInfo } from "@/lib/google/googleApi";
+import { authOptions } from "@/lib/auth/authOptions";
 
 export async function GET() {
   const session = await getServerSession(authOptions);

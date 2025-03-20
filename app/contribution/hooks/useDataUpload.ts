@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { DriveInfo, UserInfo } from "../ContributionSummary";
-import { uploadUserData, UploadResponse } from "@/lib/googleService";
+import { uploadUserData, UploadResponse } from "@/lib/google/googleService";
 import { useSession } from "next-auth/react";
+import { DriveInfo, UserInfo } from "../types";
 
 /**
  * Hook for uploading and encrypting data

@@ -1,6 +1,8 @@
 "use client";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -8,13 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { VanaDlpIntegration } from "@/components/vana/VanaDlpIntegration";
-import { useUserData } from "@/components/profile/hooks/useUserData";
 import { useEffect } from "react";
+import { VanaDlpIntegration } from "../contribution/VanaDlpIntegration";
+import { useUserData } from "./hooks/useUserData";
 
 export function UserProfile() {
   const { userInfo, driveInfo, isLoading, error } = useUserData();

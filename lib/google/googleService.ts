@@ -1,11 +1,10 @@
 /**
  * Google Drive service for client-side file operations
  */
-import { clientSideEncrypt, formatVanaFileId } from "@/lib/utils";
-import { DriveInfo, UserInfo } from "@/components/vana/ContributionSummary";
+import { DriveInfo, UserInfo } from "@/app/contribution/types";
+import { clientSideEncrypt, formatVanaFileId } from "../crypto/utils";
 
 export interface UploadResponse {
-  fileUrl: string;
   downloadUrl: string;
   fileId: string;
   vanaFileId: string;
@@ -62,11 +61,10 @@ export const uploadUserData = async (
 
   // Set permissions and get download URL
   await updateFilePermissions(accessToken, fileDetails.id);
-  const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileDetails.id}?alt=media`;
+  const downloadUrl = await createSharableLink(fileDetails.id);
 
   // Return complete response
   return {
-    fileUrl: fileDetails.webViewLink,
     downloadUrl: downloadUrl,
     fileId: fileDetails.id,
     vanaFileId: formatVanaFileId(fileDetails.webViewLink, timestamp),
@@ -195,6 +193,16 @@ const findOrCreateFolder = async (token: string, folderName: string) => {
     const folderData = await createResponse.json();
     return folderData.id;
   }
+};
+
+/**
+ * Create a sharable link for a file
+ * @param token Google OAuth access token
+ * @param fileId ID of the file to create a link for
+ * @returns Sharable link for the file
+ */
+const createSharableLink = async (fileId: string) => {
+  return `https://drive.google.com/uc?export=download&id=${fileId}`;
 };
 
 /**
