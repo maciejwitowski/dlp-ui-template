@@ -3,6 +3,7 @@
  */
 import { DriveInfo, UserInfo } from "@/app/contribution/types";
 import { clientSideEncrypt, formatVanaFileId } from "../crypto/utils";
+import JSZip from "jszip";
 
 export interface UploadResponse {
   downloadUrl: string;
@@ -46,18 +47,25 @@ export const uploadUserData = async (
   };
 
   const fileString = JSON.stringify(dataPackage);
-  const fileBlob = new Blob([fileString], { type: "application/json" });
+  
+  // Create zip file containing the JSON
+  const zip = new JSZip();
+  const jsonFileName = `vana_dlp_data_${timestamp}.json`;
+  zip.file(jsonFileName, fileString);
+  const zipBlob = await zip.generateAsync({ type: "blob" });
 
-  // Encrypt the data
-  const encryptedBlob = await clientSideEncrypt(fileBlob, signature);
+  // Encrypt the zipped data
+  const encryptedBlob = await clientSideEncrypt(zipBlob, signature);
 
   // Upload to Drive
-  const fileName = `vana_dlp_data_${timestamp}.json`;
+  const fileName = `vana_dlp_data_${timestamp}.zip`;
   const fileDetails = await uploadFileToDrive(
     encryptedBlob,
     fileName,
     accessToken
   );
+
+  console.log("File uploaded to Drive:", fileDetails);
 
   // Set permissions and get download URL
   await updateFilePermissions(accessToken, fileDetails.id);
