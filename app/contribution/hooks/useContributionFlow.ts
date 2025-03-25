@@ -241,7 +241,7 @@ export function useContributionFlow() {
     const rewardResult = await requestReward(fileId);
 
     updateContributionData({
-      rewardTxHash: rewardResult.txHash,
+      rewardTxHash: rewardResult?.transactionHash,
     });
 
     markStepComplete(STEPS.CLAIM_REWARD);
