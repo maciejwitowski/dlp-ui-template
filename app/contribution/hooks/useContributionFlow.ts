@@ -5,6 +5,7 @@ import { useSignMessage } from "wagmi";
 import { ContributionData, DriveInfo, UserInfo } from "../types";
 import { extractFileIdFromReceipt } from "../utils/fileUtils";
 import { useAddFile } from "./useAddFile";
+import { useDataRefinement } from "./useDataRefinement";
 import { useDataUpload } from "./useDataUpload";
 import { useRewardClaim } from "./useRewardClaim";
 import {
@@ -37,9 +38,10 @@ export function useContributionFlow() {
   const { addFile, isAdding, contractError } = useAddFile();
   const { requestContributionProof, isProcessing } = useTeeProof();
   const { requestReward, isClaiming } = useRewardClaim();
+  const { refine, isLoading: isRefining } = useDataRefinement();
 
   const isLoading =
-    isUploading || isAdding || isProcessing || isClaiming || isSigningMessage;
+    isUploading || isAdding || isProcessing || isClaiming || isSigningMessage || isRefining;
 
   const resetFlow = () => {
     setIsSuccess(false);
@@ -188,7 +190,7 @@ export function useContributionFlow() {
       );
 
       // Step 4: Process Proof
-      await executeProcessProofStep(proofResult);
+      await executeProcessProofStep(proofResult, signature);
 
       // Step 5: Claim Reward
       await executeClaimRewardStep(fileId);
@@ -224,13 +226,26 @@ export function useContributionFlow() {
   };
 
   // Step 4: Process Proof
-  const executeProcessProofStep = async (proofResult: ProofResult) => {
+  const executeProcessProofStep = async (proofResult: ProofResult, signature: string) => {
     setCurrentStep(STEPS.PROCESS_PROOF);
 
     // Update contribution data with proof data
     updateContributionData({
       teeProofData: proofResult.proofData,
     });
+
+    // Call the data refinement process
+    try {
+      console.log("Starting data refinement...");
+      const refinementResult = await refine({
+        file_id: proofResult.fileId,
+        encryption_key: signature,
+      });
+      
+      console.log("Data refinement completed:", refinementResult);
+    } catch (refineError) {
+      console.error("Error during data refinement:", refineError);
+    }
 
     markStepComplete(STEPS.PROCESS_PROOF);
   };
