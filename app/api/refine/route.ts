@@ -4,7 +4,7 @@ export async function POST(request: Request) {
   try {
     const requestBody = await request.json();
     
-    const refinementEndpoint = process.env.REFINEMENT_ENDPOINT;
+    const refinementEndpoint = `${process.env.REFINEMENT_ENDPOINT}/refine`;
     const fileId = requestBody.file_id;
     const encryptionKey = requestBody.encryption_key;
     const refinerId = process.env.REFINER_ID || requestBody.refiner_id;
