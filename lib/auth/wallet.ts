@@ -26,7 +26,6 @@ export const connector = paraConnector({
 // Configure Wagmi
 const config: CreateConfigParameters = {
   chains: [sepolia],
-  // @ts-expect-error - Type compatibility issue between Para connector and Wagmi
   connectors: [connector],
   transports: {
     [sepolia.id]: http(),
