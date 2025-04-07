@@ -41,7 +41,12 @@ export function useContributionFlow() {
   const { refine, isLoading: isRefining } = useDataRefinement();
 
   const isLoading =
-    isUploading || isAdding || isProcessing || isClaiming || isSigningMessage || isRefining;
+    isUploading ||
+    isAdding ||
+    isProcessing ||
+    isClaiming ||
+    isSigningMessage ||
+    isRefining;
 
   const resetFlow = () => {
     setIsSuccess(false);
@@ -226,7 +231,10 @@ export function useContributionFlow() {
   };
 
   // Step 4: Process Proof
-  const executeProcessProofStep = async (proofResult: ProofResult, signature: string) => {
+  const executeProcessProofStep = async (
+    proofResult: ProofResult,
+    signature: string
+  ) => {
     setCurrentStep(STEPS.PROCESS_PROOF);
 
     // Update contribution data with proof data
@@ -241,13 +249,15 @@ export function useContributionFlow() {
         file_id: proofResult.fileId,
         encryption_key: signature,
       });
-      
+
       console.log("Data refinement completed:", refinementResult);
+
+      markStepComplete(STEPS.PROCESS_PROOF);
+
+      return refinementResult;
     } catch (refineError) {
       console.error("Error during data refinement:", refineError);
     }
-
-    markStepComplete(STEPS.PROCESS_PROOF);
   };
 
   // Step 5: Claim Reward
