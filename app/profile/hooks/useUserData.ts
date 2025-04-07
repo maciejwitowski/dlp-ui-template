@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import type { GoogleDriveInfo, GoogleUserInfo } from "@/lib/google/googleApi";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { GoogleUserInfo, GoogleDriveInfo } from "@/lib/google/googleApi";
 
 export interface UserDataState {
   userInfo: GoogleUserInfo | null;
@@ -13,26 +13,36 @@ export interface UserDataState {
 }
 
 export function useUserData(): UserDataState {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
   const [userInfo, setUserInfo] = useState<GoogleUserInfo | null>(null);
   const [driveInfo, setDriveInfo] = useState<GoogleDriveInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Track session identity to prevent repeat fetches
+  const lastSessionUserRef = useRef<string | null>(null);
+
   useEffect(() => {
-    async function fetchUserData() {
-      if (!session) return;
+    if (!session) return;
+
+    const userKey = session.user?.email || session.user?.name || "anonymous";
+
+    // Prevent re-fetch if we already fetched for this user
+    if (lastSessionUserRef.current === userKey) return;
+
+    lastSessionUserRef.current = userKey;
+
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      setError(null);
 
       try {
-        setIsLoading(true);
-        setError(null);
-
         const [userInfoResponse, driveInfoResponse] = await Promise.all([
           fetch("/api/google/user-info"),
           fetch("/api/google/drive-info"),
         ]);
 
-        // Check for auth errors (401)
         if (
           userInfoResponse.status === 401 ||
           driveInfoResponse.status === 401
@@ -57,7 +67,6 @@ export function useUserData(): UserDataState {
             .json()
             .catch(() => ({ error: "Unknown error" }));
           console.error("Drive info error:", errorData);
-
           setError(
             "Failed to fetch drive information. Please try again later."
           );
@@ -70,17 +79,19 @@ export function useUserData(): UserDataState {
 
         setUserInfo(userInfoData);
         setDriveInfo(driveInfoData);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setError("An unexpected error occurred. Please try again later.");
-        toast.error("Failed to fetch user information");
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          console.error("Error fetching user data:", err);
+          setError("An unexpected error occurred. Please try again later.");
+          toast.error("Failed to fetch user data");
+        }
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
     fetchUserData();
-  }, [session]);
+  }, [session, status]);
 
   return {
     userInfo,

@@ -257,6 +257,7 @@ export function useContributionFlow() {
       return refinementResult;
     } catch (refineError) {
       console.error("Error during data refinement:", refineError);
+      throw refineError;
     }
   };
 

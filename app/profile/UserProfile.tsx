@@ -12,16 +12,11 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
-import { useEffect } from "react";
 import { VanaDlpIntegration } from "../contribution/VanaDlpIntegration";
 import { useUserData } from "./hooks/useUserData";
 
 export function UserProfile() {
   const { userInfo, driveInfo, isLoading, error } = useUserData();
-
-  useEffect(() => {
-    console.log("RENDER");
-  }, []);
 
   if (isLoading) {
     return <ProfileSkeleton />;
