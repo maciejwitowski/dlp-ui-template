@@ -75,9 +75,23 @@ export function useUserData(): UserDataState {
         }
 
         const userInfoData = await userInfoResponse.json();
-        const driveInfoData = await driveInfoResponse.json();
+        // Fallback to browser locale if missing
+        let finalUserInfo = userInfoData;
 
-        setUserInfo(userInfoData);
+        if (!userInfoData.locale) {
+          const browserLocale =
+            typeof navigator !== "undefined"
+              ? navigator.language || navigator.languages?.[0] || "en-US"
+              : "en-US";
+
+          finalUserInfo = {
+            ...userInfoData,
+            locale: browserLocale,
+          };
+        }
+        setUserInfo(finalUserInfo);
+
+        const driveInfoData = await driveInfoResponse.json();
         setDriveInfo(driveInfoData);
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== "AbortError") {

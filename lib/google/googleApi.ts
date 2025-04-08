@@ -23,7 +23,7 @@ export async function getUserInfo(
   accessToken: string
 ): Promise<GoogleUserInfo> {
   const response = await fetch(
-    "https://www.googleapis.com/oauth2/v2/userinfo",
+    "https://openidconnect.googleapis.com/v1/userinfo",
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -41,11 +41,11 @@ export async function getUserInfo(
   console.log("Raw Google user data:", JSON.stringify(data));
 
   return {
-    id: data.id,
+    id: data.sub,
     email: data.email,
     name: data.name,
     picture: data.picture,
-    locale: data.locale || data.language || "", // Try fallback to language if locale is not available
+    locale: data.locale ?? "",
     verifiedEmail: data.verified_email,
   };
 }
