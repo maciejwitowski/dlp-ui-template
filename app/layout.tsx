@@ -1,11 +1,9 @@
 import { AuthProvider } from "@/app/providers/AuthProvider";
-import { WalletProvider } from "@/app/providers/WalletProvider";
 import { Toaster } from "@/components/ui/sonner";
-import "@getpara/react-sdk/styles.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { headers } from "next/headers";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,17 +25,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieHeader = (await headers()).get("cookie") ?? "";
-
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <WalletProvider cookieHeader={cookieHeader}>
-            {children}
-          </WalletProvider>
+          <Providers>{children}</Providers>
           <Toaster />
         </AuthProvider>
       </body>

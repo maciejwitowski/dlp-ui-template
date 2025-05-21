@@ -9,10 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@getpara/evm-wallet-connectors": "^1.5.1",
-    "@getpara/react-sdk": "^1.5.1",
-    "@getpara/wagmi-v2-integration": "^1.5.1",
     "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.1.2",
     "@radix-ui/react-tabs": "^1.1.3",
     "@shadcn/ui": "^0.0.4",
