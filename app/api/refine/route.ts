@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const requestBody = await request.json();
-    
+
     const refinementEndpoint = `${process.env.REFINEMENT_ENDPOINT}/refine`;
     const fileId = requestBody.file_id;
     const encryptionKey = requestBody.encryption_key;
@@ -31,22 +31,21 @@ export async function POST(request: Request) {
       refiner_id: refinerId,
       env_vars: {
         PINATA_API_KEY: pinataApiKey,
-        PINATA_API_SECRET: pinataApiSecret
-      }
+        PINATA_API_SECRET: pinataApiSecret,
+      },
     };
 
     const response = await fetch(refinementEndpoint, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
 
     const data = await response.json();
-    
+
     return NextResponse.json(data, { status: response.status });
-    
   } catch (error) {
     console.error("Error in refinement process:", error);
     return NextResponse.json(
