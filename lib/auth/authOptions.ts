@@ -15,7 +15,7 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code",
           scope:
-            "openid profile email https://www.googleapis.com/auth/drive",
+            "openid profile email https://www.googleapis.com/auth/drive.file",
         },
       },
     }),
