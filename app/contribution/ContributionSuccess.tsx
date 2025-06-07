@@ -2,6 +2,7 @@ import { CheckCircle, ExternalLink } from "lucide-react";
 import { ContributionSteps } from "./ContributionSteps";
 import { ContributionSummary } from "./ContributionSummary";
 import { ContributionData, DriveInfo, UserInfo } from "./types";
+import { getTransactionUrl } from "../../contracts/chains";
 
 type ContributionSuccessProps = {
   contributionData: ContributionData;
@@ -58,7 +59,7 @@ export function ContributionSuccess({
             </span>
             {contributionData.transactionReceipt?.hash && (
               <a
-                href={`https://etherscan.io/tx/${contributionData.transactionReceipt.hash}`}
+                href={getTransactionUrl(contributionData.transactionReceipt.hash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 ml-1"
@@ -86,7 +87,7 @@ export function ContributionSuccess({
                 </span>
                 {contributionData.rewardTxHash && (
                   <a
-                    href={`https://etherscan.io/tx/${contributionData.rewardTxHash}`}
+                    href={getTransactionUrl(contributionData.rewardTxHash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 ml-1"
