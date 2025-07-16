@@ -33,23 +33,46 @@ interface RefinementResponseV2 {
   requires_polling: boolean;
 }
 
-type RefinementResponse = RefinementResponseV1 | RefinementResponseV2;
+// Unified response that always represents the final result
+interface RefinementFinalResponse {
+  transaction_hash?: string; // For V1 this is add_refinement_tx_hash, for V2 this comes from job status
+  job_id?: string; // Only present for V2
+  api_version: string; // V1 or V2
+  success: boolean;
+  error?: string;
+  processing_duration_seconds?: number; // Only for V2
+}
 
 interface UseDataRefinementReturn {
-  refine: (input: RefinementInput) => Promise<RefinementResponse>;
+  refine: (
+    input: RefinementInput, 
+    onStatusUpdate?: (status: RefinementJobStatus) => void,
+    maxPollingDurationMs?: number,
+    maxPollingRetries?: number
+  ) => Promise<RefinementFinalResponse>;
   checkStatus: (jobId: string) => Promise<RefinementJobStatus>;
-  pollJobStatus: (jobId: string, onUpdate?: (status: RefinementJobStatus) => void) => Promise<RefinementJobStatus>;
+  pollJobStatus: (
+    jobId: string, 
+    onUpdate?: (status: RefinementJobStatus) => void,
+    maxDurationMs?: number,
+    maxRetries?: number
+  ) => Promise<RefinementJobStatus>;
   isLoading: boolean;
   error: Error | null;
-  data: RefinementResponse | null;
+  data: RefinementFinalResponse | null;
 }
 
 export function useDataRefinement(): UseDataRefinementReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [data, setData] = useState<RefinementResponse | null>(null);
+  const [data, setData] = useState<RefinementFinalResponse | null>(null);
 
-  const refine = async (input: RefinementInput): Promise<RefinementResponse> => {
+  const refine = async (
+    input: RefinementInput, 
+    onStatusUpdate?: (status: RefinementJobStatus) => void,
+    maxPollingDurationMs: number = 5 * 60 * 1000, // 5 minutes
+    maxPollingRetries: number = 150 // 150 retries * 2 seconds = 5 minutes
+  ): Promise<RefinementFinalResponse> => {
     setIsLoading(true);
     setError(null);
     
@@ -72,8 +95,40 @@ export function useDataRefinement(): UseDataRefinementReturn {
       }
 
       const responseData = await response.json();
-      setData(responseData);
-      return responseData;
+      
+      // Check if it's a V2 response (requires polling)
+      if ('api_version' in responseData && responseData.api_version === 'V2') {
+        // V2: Poll for completion
+        const finalStatus = await pollJobStatus(
+          responseData.job_id, 
+          onStatusUpdate,
+          maxPollingDurationMs,
+          maxPollingRetries
+        );
+        
+        const finalResponse: RefinementFinalResponse = {
+          job_id: finalStatus.job_id,
+          api_version: 'V2',
+          success: finalStatus.status === 'completed',
+          error: finalStatus.error,
+          transaction_hash: finalStatus.transaction_hash,
+          processing_duration_seconds: finalStatus.processing_duration_seconds,
+        };
+        
+        setData(finalResponse);
+        return finalResponse;
+      } else {
+        // V1: Direct response
+        const finalResponse: RefinementFinalResponse = {
+          api_version: 'V1',
+          success: !!(responseData as RefinementResponseV1).add_refinement_tx_hash,
+          transaction_hash: (responseData as RefinementResponseV1).add_refinement_tx_hash,
+          error: (responseData as RefinementResponseV1).error,
+        };
+        
+        setData(finalResponse);
+        return finalResponse;
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error occurred');
       setError(error);
@@ -106,22 +161,55 @@ export function useDataRefinement(): UseDataRefinementReturn {
 
   const pollJobStatus = useCallback(async (
     jobId: string,
-    onUpdate?: (status: RefinementJobStatus) => void
+    onUpdate?: (status: RefinementJobStatus) => void,
+    maxDurationMs: number = 15 * 60 * 1000, // 15 minutes default
+    maxRetries: number = 450 // 450 retries * 2 seconds = 15 minutes
   ): Promise<RefinementJobStatus> => {
+    const startTime = Date.now();
+    let retryCount = 0;
+
     const poll = async (): Promise<RefinementJobStatus> => {
-      const status = await checkStatus(jobId);
+      const currentTime = Date.now();
+      const elapsedTime = currentTime - startTime;
       
-      if (onUpdate) {
-        onUpdate(status);
+      // Check timeout
+      if (elapsedTime > maxDurationMs) {
+        throw new Error(`Job polling timeout after ${Math.round(elapsedTime / 1000)}s. Job may still be processing.`);
       }
       
-      // If job is still processing, continue polling
-      if (status.status === 'submitted' || status.status === 'processing') {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-        return poll();
+      // Check retry limit
+      if (retryCount >= maxRetries) {
+        throw new Error(`Maximum polling attempts (${maxRetries}) exceeded. Job may still be processing.`);
       }
       
-      return status;
+      retryCount++;
+      
+      try {
+        const status = await checkStatus(jobId);
+        
+        if (onUpdate) {
+          onUpdate(status);
+        }
+        
+        // If job is still processing, continue polling
+        if (status.status === 'submitted' || status.status === 'processing') {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+          return poll();
+        }
+        
+        // Job is completed or failed, return final status
+        return status;
+      } catch (error) {
+        // If it's a network error and we haven't exceeded limits, retry
+        if (retryCount < maxRetries && elapsedTime < maxDurationMs) {
+          console.warn(`Status check failed (attempt ${retryCount}/${maxRetries}), retrying in 2 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return poll();
+        }
+        
+        // If we've exceeded limits, throw the error
+        throw error;
+      }
     };
 
     return poll();
