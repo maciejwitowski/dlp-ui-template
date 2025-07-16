@@ -25,14 +25,6 @@ interface RefinementResponseV1 {
   error?: string;
 }
 
-interface RefinementResponseV2 {
-  job_id: string;
-  status: string;
-  message: string;
-  api_version: string;
-  requires_polling: boolean;
-}
-
 // Unified response that always represents the final result
 interface RefinementFinalResponse {
   transaction_hash?: string; // For V1 this is add_refinement_tx_hash, for V2 this comes from job status
