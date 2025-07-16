@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { job_id: string } }
+  { params }: { params: Promise<{ job_id: string }> }
 ) {
   try {
-    const { job_id } = params;
+    const { job_id } = await params;
     const refinementEndpoint = process.env.REFINEMENT_ENDPOINT;
 
     if (!refinementEndpoint) {
