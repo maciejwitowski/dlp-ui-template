@@ -11,9 +11,7 @@ rules:
     message: "supabase.from(...).select('*') is forbidden. Whitelist columns."
     severity: ERROR
     languages: [javascript, typescript]
-    patterns:
-      - pattern: supabase.from($T).select('*', ...)
-      - pattern-not: supabase.from($T).select($C, ...)
+    pattern: supabase.from($T).select('*', ...)
 
   # Block admin/service_role usage in client code
   - id: vana.supabase.client.no-admin-on-client
@@ -22,15 +20,13 @@ rules:
     languages: [javascript, typescript]
     paths:
       include:
-        - "app/**"
-        - "pages/**"
-        - "src/**"
-        - "components/**"
+        - "**/app/**"
+        - "**/pages/**"
+        - "**/src/**"
+        - "**/components/**"
     pattern-either:
       - pattern: supabase.auth.admin.$FUNC(...)
-      - pattern: process.env.$ENV
-    metavariable-regex:
-      ENV: "(SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET|SERVICE_ROLE|SUPABASE_JWT_SECRET)"
+      - pattern-regex: "process\\.env\\.(SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET|SERVICE_ROLE|SUPABASE_JWT_SECRET)"
 
   # Avoid hardcoded apikey headers (client)
   - id: vana.supabase.client.no-embedded-keys
@@ -52,9 +48,9 @@ rules:
     languages: [javascript, typescript]
     paths:
       include:
-        - "pages/api/**"
-        - "src/pages/api/**"
-        - "app/api/**"
+        - "**/pages/api/**"
+        - "**/src/pages/api/**"
+        - "**/app/api/**"
     patterns:
       - pattern-either:
           - pattern: export default function handler(req, res) { ... }
