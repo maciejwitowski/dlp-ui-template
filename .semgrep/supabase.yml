@@ -4,13 +4,7 @@ rules:
     message: "Supabase REST with `?select=*` is forbidden. Whitelist columns."
     severity: ERROR
     languages: [javascript, typescript]
-    patterns:
-      - pattern-either:
-          - pattern: fetch($URL, ...)
-          - pattern: axios.$METHOD($URL, ...)
-      - pattern-regex:
-          pattern: "/rest/v1/.*\\?.*select\\s*=\\s*\\*"
-          field: URL
+    pattern-regex: "/rest/v1/.*\\?.*select\\s*=\\s*\\*"
 
   # Block supabase-js .select('*')
   - id: vana.supabase.client.no-select-star
