@@ -1,0 +1,62 @@
+rules:
+  # Block PostgREST calls like /rest/v1/...?...select=*
+  - id: vana.supabase.rest.no-select-star
+    message: "Supabase REST with `?select=*` is forbidden. Whitelist columns."
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern-regex: "/rest/v1/.*\\?.*select\\s*=\\s*\\*"
+
+  # Block supabase-js .select('*')
+  - id: vana.supabase.client.no-select-star
+    message: "supabase.from(...).select('*') is forbidden. Whitelist columns."
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern: supabase.from($T).select('*', ...)
+
+  # Block admin/service_role usage in client code
+  - id: vana.supabase.client.no-admin-on-client
+    message: "Admin APIs or service_role key must never run in the browser."
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      include:
+        - "**/app/**"
+        - "**/pages/**"
+        - "**/src/**"
+        - "**/components/**"
+    pattern-either:
+      - pattern: supabase.auth.admin.$FUNC(...)
+      - pattern-regex: "process\\.env\\.(SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET|SERVICE_ROLE|SUPABASE_JWT_SECRET)"
+
+  # Avoid hardcoded apikey headers (client)
+  - id: vana.supabase.client.no-embedded-keys
+    message: "Do not hardcode Supabase keys or send them from client code."
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: |
+          fetch($U, { headers: { apikey: $K, ... } })
+      - pattern: |
+          axios.$M($U, { headers: { apikey: $K, ... } })
+      - pattern: |
+          { apikey: $K, ... }
+
+  # Next.js API routes must be auth-wrapped to prevent unauth’d proxies
+  - id: vana.next.api.require-auth-wrapper
+    message: "Next.js API route missing auth wrapper (withAuth/requireAuth)."
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      include:
+        - "**/pages/api/**"
+        - "**/src/pages/api/**"
+        - "**/app/api/**"
+    patterns:
+      - pattern-either:
+          - pattern: export default function handler(req, res) { ... }
+          - pattern: export default async function handler(req, res) { ... }
+          - pattern: |
+              const handler = (...) => { ... }
+              export default handler
+      - pattern-not: export default withAuth(...)
+      - pattern-not: export default requireAuth(...)
